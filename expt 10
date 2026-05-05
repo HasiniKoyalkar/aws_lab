@@ -1,0 +1,23 @@
+Activity 1 – Deploy existing app
+AWS Console → search Elastic Beanstalk → Create Application.
+Enter Application Name (e.g., MyApp) → Create.
+Click Create Environment → Web Server Environment → Select.
+Enter Environment Name, Platform (Java/Node/PHP etc.), under Application Code: Upload your .war or .zip.
+Service Role: select LabRole, EC2 Instance Profile: LabInstanceProfile → Next.
+Select VPC, subnets, enable Public IP.
+Instance type: t2.micro, Min: 1, Max: 2 → Review → Create.
+Wait for deployment → open provided domain URL in browser → app is live.
+Activity 2 – Deploy PHP Hello World app
+Create file index.php:
+<?php
+// Hello World PHP Project
+echo "Hello World";
+Place index.php in folder demo/ → zip it as demo.zip.
+AWS Console → Elastic Beanstalk → Create Application.
+App name: e.g. yogita-web-app, Environment: Web server, Platform: PHP.
+Service role: LabRole, EC2 instance profile: LaInstanceProfile, EC2 key pair (optional) → Next → Skip to Review → Create.
+Wait until Health shows Ok (green).
+Click Upload and Deploy → upload demo.zip → Deploy.
+Open domain URL with path /demo → output: Hello World.
+(If error) Go to Logs → Request logs → Last 100 lines → download and inspect.
+To clean up: Environments → Actions → Terminate Environment → Application → Actions → Delete Application.
