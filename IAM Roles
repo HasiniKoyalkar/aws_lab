@@ -1,0 +1,10 @@
+AWS Console → IAM → Roles → Create role.
+Trusted entity: AWS Service → Use case: EC2 → Next.
+Search and select AmazonS3FullAccess → Next.
+Role name: EC2-S3-ReadOnly-Role → Create role.
+Create an EC2 instance (or use existing) → connect to it.
+Run aws ec2 describe-instances → this should fail (no role yet).
+EC2 Dashboard → select instance → Actions → Security → Modify IAM role.
+Select EC2-S3-ReadOnly-Role → Update IAM role.
+Back in EC2 terminal, run aws s3 ls → succeeds (no keys needed – temp credentials auto-provided by AWS).
+Run aws ec2 describe-instances again → still unauthorized (role only has S3 access).
