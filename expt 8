@@ -1,0 +1,66 @@
+Part A – SNS: Create topic and send to email
+AWS Console → search SNS → Topics → Create topic.
+Type: Standard, Name: MyEmailTopic → Create topic.
+Open topic → Subscriptions tab → Create subscription.
+Protocol: Email, Endpoint: your email address → Create.
+Check inbox → click Confirm subscription link.
+Back in SNS → open topic → click Publish message.
+Subject: Test Mail, Body: Hello this is SNS test → Publish message.
+Verify email is received.
+Part B – S3 Upload → SNS → Email
+Create S3 bucket: my-upload-bucket-2026 (same region as SNS).
+Reuse or create SNS topic: S3UploadNotification (confirm email subscription).
+Open SNS Topic → Access policy → Edit. Add policy (replace ARNs & account ID):
+{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Principal": {"Service": "s3.amazonaws.com"},
+    "Action": ["SNS:Publish"],
+    "Resource": "SNS_TOPIC_ARN",
+    "Condition": {
+      "ArnLike": {"aws:SourceArn": "S3_BUCKET_ARN"},
+      "StringEquals": {"aws:SourceAccount": "ACCOUNT_ID"}
+    }
+  }]
+}
+Open S3 bucket → Properties → Event notifications → Create event notification.
+Name: UploadNotification, Event type: All object create events, Destination: SNS → choose your topic → Save.
+Upload any file to S3 → verify email notification arrives.
+Part C – SQS: Create queue and send/receive message
+AWS Console → search SQS → Create queue.
+Type: Standard, Name: MyQueue → Create queue.
+Open MyQueue → Send and receive messages.
+Message body: Hello this is SQS test message → Send message.
+Click Poll for messages → message appears.
+(Optional) Select message → Delete message.
+Part D – Full pipeline: S3 → SNS → SQS → Lambda
+S3: Create bucket mys3eventbucket123.
+SNS: Create topic MyS3SNSTopic → copy Topic ARN.
+SQS: Create queue MyS3Queue → copy Queue ARN.
+Subscribe SQS to SNS: Open topic → Create subscription → Protocol: Amazon SQS, Endpoint: MyS3Queue → Create.
+SQS Access Policy: Open MyS3Queue → Access Policy → Edit → add policy:
+{
+  "Statement": [{
+    "Effect": "Allow",
+    "Principal": {"Service": "sns.amazonaws.com"},
+    "Action": "sqs:SendMessage",
+    "Resource": "SQS_ARN",
+    "Condition": {"ArnEquals": {"aws:SourceArn": "SNS_ARN"}}
+  }]
+}
+SNS Access Policy: Open SNS Topic → Edit access policy (same as Part B policy above with S3/account values).
+S3 Event Notification: Bucket → Properties → Event notifications → Create: name S3UploadEvent, All object create events, Destination: SNS → MyS3SNSTopic → Save.
+Upload a test file to S3 → open SQS → Send and receive messages → Poll for messages → verify message appears.
+Lambda Consumer: Create function SQSConsumerFunction, Runtime: Python 3.x.
+Add trigger → SQS → choose MyS3Queue → Add.
+Replace function code:
+def lambda_handler(event, context):
+    for record in event['Records']:
+        print("Message received from SQS:")
+        print(record['body'])
+    return {
+        'statusCode': 200,
+        'body': 'Message processed successfully'
+    }
+Click Deploy. Upload another file to S3 → check Lambda logs to verify processing.
