@@ -1,0 +1,31 @@
+Part A – Application Load Balancer with 2 EC2 instances
+Launch EC2 Instance #1: EC2 Console → Launch Instance → Name: webserver-1, AMI: Amazon Linux 2, Type: t2.micro.
+Security Group: allow SSH (22) + HTTP (80 from 0.0.0.0/0) → Launch with key pair.
+Connect to instance and run:
+yum update -y
+yum install httpd -y
+systemctl start httpd
+systemctl enable httpd
+echo "This is Server 1" > /var/www/html/index.html
+Launch EC2 Instance #2: Repeat with Name: webserver-2 and script:
+yum update -y
+yum install httpd -y
+systemctl start httpd
+systemctl enable httpd
+echo "This is Server 2" > /var/www/html/index.html
+Security Group for LB: EC2 → Security Groups → Create: name lb-sg, allow HTTP 80.
+EC2 → Load Balancers → Create Load Balancer → Application Load Balancer.
+Name: my-alb, Scheme: Internet-facing, IP: IPv4, Listener: HTTP 80.
+Select default VPC, select subnets → choose lb-sg security group.
+Create Target Group: Name web-servers-tg, Type: Instance, Protocol: HTTP, Port: 80.
+Register Targets: select both EC2 instances → Include as pending → Register.
+Review → Create Load Balancer.
+Copy ALB DNS name → paste in browser → refresh multiple times → alternates between Server 1 and Server 2.
+Part B – Auto Scaling Group
+Create AMI: EC2 → select configured instance → Actions → Image and Templates → Create Image → name: my-webserver-AMI → Create. Wait for status: available.
+Launch Template: EC2 → Launch Templates → Create: name my-launch-template, AMI: my-webserver-AMI, Type: t2.micro, Key pair, Security group (HTTP 80) → Create.
+Create ASG: EC2 → Auto Scaling Groups → Create → name webserver-asg, Launch template: my-launch-template → Next.
+VPC: default, Subnets: all, Attach to existing load balancer, Health Check: HTTP, Grace period: 300s → Next.
+Desired: 2, Min: 1, Max: 4 → Next → Review → Create Auto Scaling Group.
+Verify: Load Balancer → Target Group → 2 healthy instances.
+Test recovery: terminate one instance → ASG auto-launches a replacement.
