@@ -1,0 +1,16 @@
+Steps
+AWS Console → search Amazon Lex → Create bot.
+Choose: Create a blank bot, Name: HotelBookingBot, IAM role: Create new → Next, Language: English → Done.
+Go to Intents → Create intent → Name: BookHotel.
+Add sample utterances: I want to book a hotel, Book a room, Reserve hotel, I need a room.
+Slot 1 – age: Add slot → name: age, type: AMAZON.Number, prompt: What is your age? → Required.
+Add IF condition (Advanced options): if {age} < 18 → response: You are not eligible for hotel booking.
+Slot 2 – location: name: location, type: AMAZON.City, prompt: Which city do you want? → Required.
+Slot 3 – checkin: name: checkin, type: AMAZON.Date, prompt: What is your check-in date?, retry: Please provide a valid date (e.g., 2026-03-25) → Save.
+Slot 4 – nights: name: nights, type: AMAZON.Number, prompt: How many nights will you stay? → Save.
+Custom Slot Type – RoomType: Slot Types → Add slot type → name: RoomType, values: Single, Double, Suite → Save.
+Back in intent → Add slot: name: RoomType, type: RoomType.
+Response cards: Go to slot prompts → more prompt options → Add → Add card groups. Card title: Select Room Type, buttons: Single, Double, Suite.
+Initial response: Welcome to Hotel Booking! What is your name?
+Confirmation: Do you want to confirm booking in {location} for {nights} nights?
+Click Build → use Test chatbot panel → type Book a hotel and follow prompts.
