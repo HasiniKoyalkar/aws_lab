@@ -1,0 +1,19 @@
+Part A – Create IAM User
+Login to AWS Console as Root user → search IAM.
+Navigate to Users → Create user.
+Username: S3_Specialist, check Provide user access to AWS Management Console → custom password.
+Permissions: Attach policies directly → search and select AmazonS3FullAccess.
+Complete wizard → on final page click Download .csv file.
+Copy your 12-digit Account ID from top-right dropdown → Sign out.
+Sign in using IAM URL from .csv → enter Account ID, username, password.
+Test 1 (failure): Go to EC2 → try to view instances → should see Access Denied.
+Test 2 (success): Go to S3 → create a bucket → succeeds due to attached policy.
+Part B – AWS CLI Configuration
+In IAM → select user → Security credentials tab → Create access key.
+Download / copy the Access Key ID and Secret Access Key.
+Install AWS CLI from official site.
+Open CMD/Terminal → run aws configure.
+Enter: Access Key ID, Secret Access Key, Default region (e.g. ap-south-1) → Enter.
+Verify: run aws s3 ls → lists your buckets.
+Create a bucket: aws s3 mb s3://your-unique-bucket-name.
+Verify bucket appears in AWS Console.
