@@ -1,0 +1,52 @@
+Part A – Basic Python Lambda
+Go to AWS Console → Compute → Lambda.
+Click Create function → Author from scratch.
+Set: Function name: basic-python-lambda, Runtime: Python 3.9, Architecture: x86_64.
+Under permissions → Use existing role: Lab Role → Click Create function.
+Replace the default code with the Add Two Numbers lambda:
+import json
+def lambda_handler(event, context):
+    a = event.get('num1', 0)
+    b = event.get('num2', 0)
+    result = a + b
+    return {
+        'statusCode': 200,
+        'body': json.dumps({'sum': result})
+    }
+Click Deploy.
+Click Test → Create new event → name: testInput → paste JSON:
+{"num1": 10, "num2": 20}
+Click Test → expected output: {"statusCode": 200, "body": "{\"sum\": 30}"}
+Go to General Configuration → Edit → set Memory: 128 MB, Timeout: 3 sec → Save.
+Part B – S3 Upload → Lambda → DynamoDB
+Create a DynamoDB table named newtable (primary key: unique).
+Create a Lambda function named S3ToDynamoDB, Runtime: Python, use existing role with S3+DynamoDB access.
+Paste the Lambda code:
+import boto3
+from uuid import uuid4
+
+def lambda_handler(event, context):
+    s3 = boto3.client("s3")
+    dynamodb = boto3.resource('dynamodb')
+    if 'Records' in event:
+        for record in event['Records']:
+            bucket_name = record['s3']['bucket']['name']
+            object_key = record['s3']['object']['key']
+            size = record['s3']['object'].get('size', -1)
+            event_name = record.get('eventName', 'Unknown')
+            event_time = record.get('eventTime', 'Unknown')
+            dynamoTable = dynamodb.Table('newtable')
+            dynamoTable.put_item(Item={
+                'unique': str(uuid4()),
+                'Bucket': bucket_name,
+                'Object': object_key,
+                'Size': size,
+                'Event': event_name,
+                'EventTime': event_time
+            })
+    else:
+        print("No 'Records' key found in the event.")
+Click Deploy.
+In the Designer section → click Add trigger → select S3.
+Choose your S3 bucket, Event type: All object create events → click Add.
+Upload a file to the S3 bucket → verify a new item appears in DynamoDB table.
