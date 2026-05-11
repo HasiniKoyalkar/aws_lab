@@ -1,0 +1,36 @@
+Part A: Connect Ubuntu EC2 Using PuTTY (.ppk key)
+Step 1: Go to AWS Console → EC2 → Security Groups → Inbound rules. Make sure SSH (port 22) is allowed.
+Step 2: Open PuTTY on your Windows machine.
+Step 3: In PuTTY, go to Connection → SSH → Auth → Credentials. Click Browse, select your .ppk file, and click Open.
+Step 4: In the Session tab, enter the Public IP or DNS of your EC2 instance in the Host Name field. Click Open to connect.
+Step 5: When prompted for a username, type ubuntu and press Enter. You are now connected.
+
+Part B: Connect Ubuntu EC2 Using PuTTY (.pem key — convert first)
+Step 1: Open PuTTYgen. Click Load, change the file type filter to All Files, and select your .pem file. Click Open.
+Step 2: Click Save private key and save it with a .ppk extension.
+Step 3: Go to AWS Console → EC2 → Instances. Select your instance, click Connect, and copy the Public DNS name.
+Step 4: Open PuTTY. In the Session tab, paste the Public DNS in the Host Name field.
+Step 5: Go to Connection → SSH → Auth → Credentials, attach your newly saved .ppk file.
+Step 6: Click Open and log in with username ubuntu. Verify you see the terminal prompt.
+
+Part C: Connect EC2 Using AWS CloudShell
+Step 1: Create an EC2 instance with a key pair (.pem) if not already done.
+Step 2: Log in to AWS Console and click the CloudShell icon (terminal icon, top-right).
+Step 3: Go to EC2 → Instances, select your instance, click Connect, then choose the SSH client tab.
+Step 4: Copy the ssh -i command shown on screen.
+Step 5: Paste it in CloudShell and press Enter — it will fail with "no such file or directory" (expected — key not uploaded yet).
+Step 6: In CloudShell, click the "+" (Actions) icon → Upload file, and upload your .pem key from your local machine.
+Step 7: Copy the ssh -i command again from EC2 → Connect → SSH client.
+Step 8: Paste and execute the command in CloudShell. You should now be connected.
+
+Part D: Create a Windows EC2 Instance and Connect via RDP
+Step 1: Go to EC2 → Instances → Launch Instances.
+Step 2: Under AMI, choose a Windows Server AMI (e.g., Windows Server 2019 or 2022).
+Step 3: Choose instance type (e.g., t2.micro).
+Step 4: Configure the Security Group — make sure RDP port 3389 is allowed (Source: My IP).
+Step 5: Select or create a Key Pair, download the .pem file, and click Launch Instance.
+Step 6: After the instance is running, go to EC2 → Instances and note the Public DNS (IPv4) or Public IP.
+Step 7: Select your instance → click Connect → RDP Client → click Get Password.
+Step 8: Upload your .pem key file → click Decrypt Password → copy the Administrator password shown.
+Step 9: On your Windows machine, open Remote Desktop Connection (mstsc). Enter the Public DNS or IP in the Computer field.
+Step 10: Click Connect. Enter Username: Administrator and paste the decrypted password. Click OK. You can now use it as a normal Windows machine.
