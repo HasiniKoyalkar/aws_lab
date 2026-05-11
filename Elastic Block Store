@@ -1,0 +1,73 @@
+Part A: Create and Attach an EBS Volume to EC2
+Step 1: Go to EC2 Dashboard → Elastic Block Store → Volumes. Click Create Volume.
+Step 2: Choose Volume type (gp3/gp2), set the size, and make sure the Availability Zone matches your EC2 instance's AZ. Click Create Volume.
+Step 3: Select the newly created volume → click Actions → Attach Volume.
+Step 4: Choose your target EC2 instance from the list. Specify device name (e.g., /dev/xvdf). Click Attach.
+Step 5: Connect to your EC2 instance via SSH.
+Step 6: Run lsblk to verify the new volume is attached and visible
+Part B: Scale EC2 Instance (Change Instance Type)
+Step 1: Go to EC2 Dashboard. Select your instance and click Stop (wait for it to stop).
+Step 2: Click Actions → Instance Settings → Change Instance Type.
+Step 3: Select the new instance type (e.g., from t2.micro to t2.small). Click Apply.
+Step 4: Start the instance again. The CPU and RAM are now upgraded.
+Part C: Permanently Mount EBS Volume on Linux EC2
+Step 1: View current disk status
+bash
+lsblk
+Step 2: Check if disk is already formatted
+bash
+sudo file -s /dev/xvdbf
+Step 3: Format the disk with ext4 filesystem
+bash
+sudo mkfs.ext4 /dev/xvdbf
+Step 4: Create mount directory
+bash
+sudo mkdir -p /mnt/data
+Step 5: Mount the volume
+bash
+sudo mount /dev/xvdbf /mnt/data
+Step 6: Verify mount succeeded
+bash
+df -h
+Step 7: Get disk UUID for permanent mount
+bash
+sudo blkid /dev/xvdbf
+Step 8: Backup existing fstab file
+bash
+sudo cp /etc/fstab /etc/fstab.backup
+Step 9: Open fstab for editing
+bash
+sudo nano /etc/fstab
+Step 10: Add this line at the end of fstab file
+text
+UUID=ff5b5ce1-ce99-40ff-9869-a52a1a7bec47 /mnt/data ext4 defaults,nofail 0 0
+Note: Replace UUID with the one you got from Step 7
+
+Step 11: Save and exit nano
+Press Ctrl+X, then Y, then Enter
+
+Step 12: Test the fstab entry
+bash
+sudo mount -a
+Step 13: Create a test file
+bash
+sudo touch /mnt/data/f1
+Step 14: Verify file was created
+bash
+ls -la /mnt/data/
+Step 15: Reboot to test persistence
+bash
+sudo reboot
+Step 16: After reboot, verify mount still works
+bash
+df -h
+ls -la /mnt/data/
+Part D: Create a Snapshot and Copy to Another Region
+Step 1: Go to EC2 → Elastic Block Store → Volumes. Select the volume you want to snapshot.
+Step 2: Click Actions → Create Snapshot. Provide a name and description. Click Create Snapshot.
+Step 3: Once the snapshot is created, go to EC2 → Snapshots in the source region.
+Step 4: Select your snapshot → click Actions → Copy Snapshot.
+Step 5: Choose the destination region and click Copy. Switch to the destination region in the console.
+Step 6: In the destination region, go to EC2 → Snapshots. Select the copied snapshot → click Actions → Create Volume from Snapshot.
+Step 7: Choose the Availability Zone (must match the target EC2 instance). Click Create Volume.
+Step 8: Once created, attach the new volume to an EC2 instance in the destination region via Actions → Attach Volume.
