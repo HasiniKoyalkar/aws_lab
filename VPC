@@ -1,0 +1,10 @@
+Step 1: Go to AWS Console → VPC → Create VPC. Choose VPC only. Set Name: Custom-VPC, IPv4 CIDR: 10.0.0.0/16. Click Create VPC.
+Step 2: Go to Subnets → Create subnet. Choose your VPC. Create a Public Subnet (CIDR: 10.0.1.0/24) and a Private Subnet (CIDR: 10.0.2.0/24).
+Step 3: Go to Internet Gateways → Create Internet Gateway. Name it and click Create. Then click Actions → Attach to VPC and attach it to your VPC.
+Step 4: Go to Route Tables → Create route table. Select your VPC, name it Public-RT. Click Create.
+Step 5: Select the Public-RT → go to Routes → Edit routes → Add route. Destination: 0.0.0.0/0, Target: your Internet Gateway. Save.
+Step 6: Go to Subnet associations → Edit subnet associations. Select the Public Subnet. Save.
+Step 7: Select the Public Subnet → click Actions → Edit subnet settings → enable Auto-assign public IPv4 address.
+Step 8: Create a Security Group in your VPC. Add inbound rules: SSH (port 22) and HTTP (port 80).
+Step 9: Launch a Public EC2 instance into the Public Subnet with your security group. Launch a Private EC2 instance into the Private Subnet.
+Step 10: SSH into the Public EC2 using its public IP — it should work. Verify the Private EC2 has no direct inbound internet access.
