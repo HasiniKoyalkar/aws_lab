@@ -1,33 +1,65 @@
-Part A – Basic Python Lambda
-Go to AWS Console → Compute → Lambda.
-Click Create function → Author from scratch.
-Set: Function name: basic-python-lambda, Runtime: Python 3.9, Architecture: x86_64.
-Under permissions → Use existing role: Lab Role → Click Create function.
-Replace the default code with the Add Two Numbers lambda:
-import json
-def lambda_handler(event, context):
-    a = event.get('num1', 0)
-    b = event.get('num2', 0)
-    result = a + b
-    return {
-        'statusCode': 200,
-        'body': json.dumps({'sum': result})
-    }
-Click Deploy.
-Click Test → Create new event → name: testInput → paste JSON:
-{"num1": 10, "num2": 20}
-Click Test → expected output: {"statusCode": 200, "body": "{\"sum\": 30}"}
-Go to General Configuration → Edit → set Memory: 128 MB, Timeout: 3 sec → Save.
-Part B – S3 Upload → Lambda → DynamoDB
-Create a DynamoDB table named newtable (primary key: unique).
-Create a Lambda function named S3ToDynamoDB, Runtime: Python, use existing role with S3+DynamoDB access.
-Paste the Lambda code:
+Step 1: Create DynamoDB Table
+Go to AWS Console → Search DynamoDB
+
+Click Create table
+
+Table name: S3Files
+
+Partition key: unique
+
+Key type: String
+
+Leave all other defaults
+
+Click Create table
+
+Wait for status to change from "Creating" to "Active" (10-20 seconds)
+
+Part B: Create S3 Bucket
+Step 1: Create S3 Bucket
+Go to AWS Console → Search S3
+
+Click Create bucket
+
+Bucket name: malleshaishu (or your unique name)
+
+Region: us-east-1
+
+Uncheck "Block all public access" (if needed)
+
+Click Create bucket
+
+Part C: Create Lambda Function
+Step 1: Create Lambda Function
+Go to AWS Console → Search Lambda
+
+Click Create function
+
+Choose Author from scratch
+
+Function name: S3ToDynamo
+
+Runtime: Python 3.9 (or 3.14)
+
+Architecture: x86_64
+
+Click Create function
+
+Step 2: Write Lambda Code
+Scroll down to Code source section
+
+Replace the existing code with:
+
+python
 import boto3
 from uuid import uuid4
 
 def lambda_handler(event, context):
-    s3 = boto3.client("s3")
+    print("Lambda function started")
+    
     dynamodb = boto3.resource('dynamodb')
+    dynamoTable = dynamodb.Table('S3Files')
+    
     if 'Records' in event:
         for record in event['Records']:
             bucket_name = record['s3']['bucket']['name']
@@ -35,18 +67,112 @@ def lambda_handler(event, context):
             size = record['s3']['object'].get('size', -1)
             event_name = record.get('eventName', 'Unknown')
             event_time = record.get('eventTime', 'Unknown')
-            dynamoTable = dynamodb.Table('newtable')
-            dynamoTable.put_item(Item={
-                'unique': str(uuid4()),
-                'Bucket': bucket_name,
-                'Object': object_key,
-                'Size': size,
-                'Event': event_name,
-                'EventTime': event_time
-            })
+            
+            dynamoTable.put_item(
+                Item={
+                    'unique': str(uuid4()),
+                    'Bucket': bucket_name,
+                    'Object': object_key,
+                    'Size': size,
+                    'Event': event_name,
+                    'EventTime': event_time
+                }
+            )
+            print(f"Successfully wrote {object_key} to DynamoDB")
     else:
         print("No 'Records' key found in the event.")
-Click Deploy.
-In the Designer section → click Add trigger → select S3.
-Choose your S3 bucket, Event type: All object create events → click Add.
-Upload a file to the S3 bucket → verify a new item appears in DynamoDB table.
+    
+    return {'statusCode': 200}
+Click Deploy button (orange)
+
+Part D: Configure IAM Permissions
+Step 1: Add DynamoDB Permission
+Go to Lambda → S3ToDynamo function
+
+Click Configuration tab
+
+Click Permissions (left menu)
+
+Click the Role name (blue link)
+
+In IAM console, click Add permissions → Attach policies
+
+Search for: AmazonDynamoDBFullAccess
+
+Check the box → Click Add permissions
+
+Step 2: Add S3 Permission (if needed)
+Click Add permissions → Attach policies again
+
+Search for: AmazonS3ReadOnlyAccess
+
+Check the box → Click Add permissions
+
+Step 3: Go Back to Lambda Function
+Part E: Increase Lambda Timeout
+Step 1: Update Timeout Settings
+In Lambda function → Configuration tab
+
+Click General configuration (left menu)
+
+Click Edit
+
+Timeout: Set to 0 minutes 30 seconds
+
+Memory: Set to 256 MB (optional)
+
+Click Save
+
+Part F: Add S3 Trigger
+Step 1: Add Trigger to Lambda
+In Lambda function → Configuration tab
+
+Click Triggers (left menu)
+
+Click Add trigger
+
+Select S3 from dropdown
+
+Bucket: Select malleshaishu
+
+Event types: PUT (or s3:ObjectCreated:Put)
+
+Click Add
+
+Part G: Test Lambda (Manual)
+Step 1: Create Test Event
+Click Test tab (orange button)
+
+Select Create new test event
+
+Event name: S3Test
+
+Replace with this JSON:
+
+json
+{
+  "Records": [
+    {
+      "s3": {
+        "bucket": {
+          "name": "malleshaishu"
+        },
+        "object": {
+          "key": "error.html",
+          "size": 1234
+        }
+      },
+      "eventName": "ObjectCreated:Put",
+      "eventTime": "2025-05-11T20:30:00.000Z"
+    }
+  ]
+}
+Click Save
+
+Click Test
+
+Step 2: Verify Success
+You should see:
+
+text
+Execution result: succeeded ✅
