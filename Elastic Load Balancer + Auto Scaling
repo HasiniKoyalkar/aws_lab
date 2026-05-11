@@ -21,11 +21,23 @@ Create Target Group: Name web-servers-tg, Type: Instance, Protocol: HTTP, Port: 
 Register Targets: select both EC2 instances → Include as pending → Register.
 Review → Create Load Balancer.
 Copy ALB DNS name → paste in browser → refresh multiple times → alternates between Server 1 and Server 2.
-Part B – Auto Scaling Group
-Create AMI: EC2 → select configured instance → Actions → Image and Templates → Create Image → name: my-webserver-AMI → Create. Wait for status: available.
-Launch Template: EC2 → Launch Templates → Create: name my-launch-template, AMI: my-webserver-AMI, Type: t2.micro, Key pair, Security group (HTTP 80) → Create.
-Create ASG: EC2 → Auto Scaling Groups → Create → name webserver-asg, Launch template: my-launch-template → Next.
-VPC: default, Subnets: all, Attach to existing load balancer, Health Check: HTTP, Grace period: 300s → Next.
-Desired: 2, Min: 1, Max: 4 → Next → Review → Create Auto Scaling Group.
-Verify: Load Balancer → Target Group → 2 healthy instances.
-Test recovery: terminate one instance → ASG auto-launches a replacement.
+Part B: Create Application Load Balancer
+Step 1: Go to EC2 → Load Balancers → Create Load Balancer → Application Load Balancer.
+Step 2: Name the ALB (e.g., my-alb). Scheme: Internet-facing. Select at least 2 Availability Zones.
+Step 3: Configure a Security Group: allow HTTP port 80 from anywhere.
+Step 4: Create a Target Group: type Instances, protocol HTTP, port 80. Health check path: /.
+Step 5: Register both webserver-1 and webserver-2 as targets. Click Include as pending. Create target group.
+Step 6: Back in the ALB setup, select your Target Group as listener. Click Create Load Balancer.
+Step 7: Copy the ALB DNS Name from the Load Balancer description tab.
+Step 8: Paste it in a browser — you should see either WebServer-1 or WebServer-2. Refresh multiple times — traffic alternates between instances.
+
+Part C: Auto Scaling Group
+Step 1: Go to EC2 → AMIs → Create AMI from one of your configured web server instances. Name it my-webserver-AMI. Wait for status: available.
+Step 2: Go to EC2 → Launch Templates → Create Launch Template. Name: my-launch-template. Set AMI, instance type (t2.micro), key pair, and security group.
+Step 3: Go to EC2 → Auto Scaling Groups → Create Auto Scaling Group. Name: webserver-asg.
+Step 4: Select your launch template. Click Next.
+Step 5: Select your VPC and all AZ subnets. Click Next.
+Step 6: Attach to an existing Load Balancer — select your ALB. Click Next.
+Step 7: Set Desired: 2, Minimum: 1, Maximum: 4. Click Next → review → Create Auto Scaling Group.
+Step 8: Go to Load Balancers → select your ALB and verify instances are healthy. Check Auto Scaling Group → Instances tab to confirm instances are running.
+Step 9: Terminate one instance manually — the Auto Scaling Group will automatically launch a replacement.
