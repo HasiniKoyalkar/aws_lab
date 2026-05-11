@@ -1,0 +1,20 @@
+Step 1: Log in to AWS Console → go to EC2 → Launch Instance. Configure:
+
+Instance Name: EFS-1
+AMI: Amazon Linux 2
+Subnet: Subnet-1a
+Key Pair: EFS (create or use existing)
+
+Step 2: Repeat and launch a second instance named EFS-2 in Subnet-1b with the same key pair and security group.
+Step 3: Go to EFS service → Create file system. Choose the VPC and configure mount targets in the same subnets as your EC2 instances. Click Create.
+Step 4: Open two PowerShell/terminal sessions. SSH into EFS-1 in one and EFS-2 in the other.
+Step 5: In each instance, switch to root:
+bashsudo su
+Step 6: Create a directory for mounting:
+mkdir /mnt/efs
+Step 7: Install Amazon EFS utilities:
+sudo yum install -y amazon-efs-utils
+Step 8: Go to EFS Console → Select your file system → Attach. Choose Mount via DNS and copy the mount command.
+Step 9: Paste and execute the mount command on both EC2 instances:
+sudo mount -t efs <efs-dns-name>:/ /mnt/efs
+Step 10: cd efs-> touch f1-> ls in terminal 1 and cd efs->ls in terminal 2
