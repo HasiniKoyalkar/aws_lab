@@ -1,0 +1,176 @@
+Step 1: Create VPC
+Go to VPC Dashboard → Create VPC
+
+Resources to create: VPC only
+
+Name: my-vpc
+
+IPv4 CIDR: 10.0.0.0/16
+
+Click Create VPC
+
+Step 2: Create Subnets
+Go to Subnets → Create Subnet
+
+Select VPC: my-vpc
+
+Public Subnet:
+
+Name: public-subnet
+
+Availability Zone: us-east-1a
+
+CIDR: 10.0.1.0/24
+
+Private Subnet:
+
+Name: private-subnet
+
+Availability Zone: us-east-1a
+
+CIDR: 10.0.2.0/24
+
+Click Create Subnet
+
+Step 3: Create and Attach Internet Gateway
+Go to Internet Gateways → Create Internet Gateway
+
+Name: my-igw
+
+Click Create Internet Gateway
+
+Select my-igw → Actions → Attach to VPC
+
+Select my-vpc → Attach
+
+Step 4: Create Route Table
+Go to Route Tables → Create Route Table
+
+Name: public-rt
+
+Select VPC: my-vpc
+
+Click Create
+
+Add Route:
+
+Select public-rt → Routes tab → Edit routes
+
+Click Add route
+
+Destination: 0.0.0.0/0
+
+Target: Internet Gateway → Select my-igw
+
+Click Save changes
+
+Associate with Public Subnet:
+
+Select public-rt → Subnet associations tab → Edit subnet associations
+
+Select public-subnet
+
+Click Save associations
+
+PART 2: Launch Bastion Server (Public Subnet)
+Step 5: Launch Bastion EC2 Instance
+Via AWS Console:
+
+Go to EC2 Dashboard → Launch Instance
+
+Name: bastion-server
+
+AMI: Ubuntu 22.04 (or 24.04)
+
+Instance type: t2.micro
+
+Key pair: Create or select existing → Name: bastion-key (download .pem file)
+
+Network settings → Edit:
+
+VPC: my-vpc
+
+Subnet: public-subnet
+
+Auto-assign public IP: Enable
+
+Security group rules:
+
+Type: SSH, Port: 22, Source: 0.0.0.0/0
+
+Launch instance
+
+After launch, note:
+
+Public IP: 16.147.229.31 (from your example)
+
+Private IP: 10.0.1.x
+
+PART 3: Launch Database Server (Private Subnet)
+Step 6: Launch Database EC2 Instance
+Via AWS Console:
+
+Launch Instance
+
+Name: database-server
+
+AMI: Amazon Linux 2 (or Ubuntu)
+
+Instance type: t2.micro
+
+Key pair: Create or select → Name: database-key (download .pem file)
+
+Network settings → Edit:
+
+VPC: my-vpc
+
+Subnet: private-subnet
+
+Auto-assign public IP: Disable
+
+Security group rules:
+
+Type: SSH, Port: 22, Source: 10.0.1.0/24 (Bastion subnet CIDR)
+
+Launch instance
+
+After launch, note:
+
+Private IP: 10.0.2.16 (from your example)
+
+No public IP
+
+PART 4: SSH Commands
+Step 7: SSH into Bastion Server (From Local Machine)
+On your local terminal:
+
+bash
+# Set correct permission for bastion key
+chmod 400 bastion.pem
+
+# SSH into Bastion
+ssh -i "bastion.pem" ubuntu@16.147.229.31
+Expected output:
+
+text
+ubuntu@ip-10-0-1-xxx:~$
+Step 8: Copy Database Key to Bastion Server
+From your LOCAL machine (open new terminal):
+
+bash
+scp -i "bastion.pem" "database.pem" ubuntu@16.147.229.31:~/
+Step 9: SSH from Bastion to Database Server
+On Bastion server (already connected):
+
+bash
+# Set permission for database key
+chmod 400 database.pem
+
+# SSH to Database (using private IP)
+ssh -i "database.pem" ec2-user@10.0.2.16
+Accept host key: Type yes and press Enter
+
+Expected output:
+
+text
+[ec2-user@ip-10-0-2-16 ~]$
