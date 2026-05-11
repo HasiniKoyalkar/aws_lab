@@ -13,16 +13,26 @@ Reuse or create SNS topic: S3UploadNotification (confirm email subscription).
 Open SNS Topic → Access policy → Edit. Add policy (replace ARNs & account ID):
 {
   "Version": "2012-10-17",
-  "Statement": [{
-    "Effect": "Allow",
-    "Principal": {"Service": "s3.amazonaws.com"},
-    "Action": ["SNS:Publish"],
-    "Resource": "SNS_TOPIC_ARN",
-    "Condition": {
-      "ArnLike": {"aws:SourceArn": "S3_BUCKET_ARN"},
-      "StringEquals": {"aws:SourceAccount": "ACCOUNT_ID"}
+  "Id": "S3EventNotificationPolicy",
+  "Statement": [
+    {
+      "Sid": "AllowS3ToPublish",
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "s3.amazonaws.com"
+      },
+      "Action": "SNS:Publish",
+      "Resource": "arn:aws:sns:us-east-1:447640317537:s3-event-topic",
+      "Condition": {
+        "ArnLike": {
+          "aws:SourceArn": "arn:aws:s3:::your-bucket-name"
+        },
+        "StringEquals": {
+          "aws:SourceAccount": "447640317537"
+        }
+      }
     }
-  }]
+  ]
 }
 Open S3 bucket → Properties → Event notifications → Create event notification.
 Name: UploadNotification, Event type: All object create events, Destination: SNS → choose your topic → Save.
