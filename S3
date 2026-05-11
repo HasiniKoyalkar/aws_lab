@@ -1,0 +1,44 @@
+Part A: Create an S3 Bucket, Upload Object, and Enable Public Access
+Step 1: Log in to AWS Console → go to Services → S3 → click Create bucket.
+Step 2: Enter a unique bucket name, choose a region. Under Block Public Access settings, uncheck all block public access options. Acknowledge the warning. Click Create bucket.
+Step 3: Open the bucket → go to the Permissions tab → click Edit under Object Ownership → enable ACLs. Save changes.
+Step 4: Click Upload → Add files → select your file → click Upload.
+Step 5: Click on the uploaded object → go to Permissions tab → click Edit → set Object ACL to Public Read. Save.
+Step 6: Copy the Object URL and paste it in a browser — the file should be accessible publicly.
+
+Part B: S3 Versioning
+Step 1: Open your S3 bucket → go to the Properties tab → scroll to Bucket Versioning → click Edit → select Enable → Save.
+Step 2: Upload a file (e.g., test.txt). Then modify its contents locally and upload it again with the same name.
+Step 3: In the bucket, click Show versions toggle — you will see multiple versions of the file listed with different Version IDs.
+Step 4: Click on an older version's Version ID to restore or download it individually.
+
+Part C: Cross-Region Replication (CRR)
+Step 1: Create an S3 bucket in the source region with versioning enabled (required for CRR).
+Step 2: Create another S3 bucket in the destination region with versioning also enabled.
+Step 3: In the source bucket → go to Management tab → Replication rules → Create replication rule.
+Step 4: Name the rule. Under Source, select this bucket. Under Destination, choose the destination bucket.
+Step 5: For IAM Role, let AWS create a new role automatically. Click Save.
+Step 6: Upload an object to the source bucket. After a few moments, check the destination bucket — the object should appear there automatically.
+
+Part D: Static Website Hosting on S3
+Step 1: Create an S3 bucket. Unblock all public access and enable ACLs (same as Part A, Steps 1–3).
+Step 2: Go to Properties → Static website hosting → Edit → select Enable. Set:
+
+Index document: index.html
+Error document: error.html
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "PublicReadGetObject",
+            "Effect": "Allow",
+            "Principal": "*",
+            "Action": "s3:GetObject",
+            "Resource": "arn:aws:s3:::your-bucket-name/*"
+        }
+    ]
+}
+Click Save.
+Step 3: Create and upload index.html and error.html files to the bucket. Set both to Public Read via ACL.
+Step 4: Go back to Properties → Static website hosting and copy the Website endpoint URL.
+Step 5: Paste the URL in a browser — your static website should load. Test the error page by entering a wrong path.
