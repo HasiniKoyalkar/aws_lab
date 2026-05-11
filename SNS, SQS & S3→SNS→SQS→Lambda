@@ -44,33 +44,223 @@ Open MyQueue → Send and receive messages.
 Message body: Hello this is SQS test message → Send message.
 Click Poll for messages → message appears.
 (Optional) Select message → Delete message.
-Part D – Full pipeline: S3 → SNS → SQS → Lambda
-S3: Create bucket mys3eventbucket123.
-SNS: Create topic MyS3SNSTopic → copy Topic ARN.
-SQS: Create queue MyS3Queue → copy Queue ARN.
-Subscribe SQS to SNS: Open topic → Create subscription → Protocol: Amazon SQS, Endpoint: MyS3Queue → Create.
-SQS Access Policy: Open MyS3Queue → Access Policy → Edit → add policy:
+her file tPart 1: Create SNS Topic
+Step 1: Create Topic
+Go to AWS Console → Search SNS
+
+Click Topics → Create topic
+
+Type: Select Standard
+
+Name: Enter s3-event-topic
+
+Click Create topic
+
+Step 2: Copy Topic ARN
+After creation, copy the ARN (looks like: arn:aws:sns:us-east-1:447640317537:s3-event-topic)
+
+Part 2: Create SQS Queue
+Step 1: Create Queue
+Go to AWS Console → Search SQS
+
+Click Create queue
+
+Type: Select Standard
+
+Name: Enter s3-event-queue
+
+Leave all other defaults
+
+Click Create queue
+
+Step 2: Copy Queue ARN
+After creation, copy the ARN (looks like: arn:aws:sqs:us-east-1:447640317537:s3-event-queue)
+
+Part 3: Subscribe SQS to SNS
+Step 1: Create Subscription
+Go to SNS → Topics → Click s3-event-topic
+
+Click Subscriptions tab → Create subscription
+
+Protocol: Select Amazon SQS
+
+Endpoint: Click the dropdown and select s3-event-queue
+
+Click Create subscription
+
+Step 2: Verify Subscription
+Status should change from "Pending confirmation" to "Confirmed" (takes a few seconds)
+
+Part 4: Add SQS Access Policy
+Step 1: Edit Queue Policy
+Go to SQS → Click s3-event-queue
+
+Click Access policy tab → Edit
+
+Step 2: Add Policy
+Replace existing policy with:
+
+json
 {
-  "Statement": [{
-    "Effect": "Allow",
-    "Principal": {"Service": "sns.amazonaws.com"},
-    "Action": "sqs:SendMessage",
-    "Resource": "SQS_ARN",
-    "Condition": {"ArnEquals": {"aws:SourceArn": "SNS_ARN"}}
-  }]
-}
-SNS Access Policy: Open SNS Topic → Edit access policy (same as Part B policy above with S3/account values).
-S3 Event Notification: Bucket → Properties → Event notifications → Create: name S3UploadEvent, All object create events, Destination: SNS → MyS3SNSTopic → Save.
-Upload a test file to S3 → open SQS → Send and receive messages → Poll for messages → verify message appears.
-Lambda Consumer: Create function SQSConsumerFunction, Runtime: Python 3.x.
-Add trigger → SQS → choose MyS3Queue → Add.
-Replace function code:
-def lambda_handler(event, context):
-    for record in event['Records']:
-        print("Message received from SQS:")
-        print(record['body'])
-    return {
-        'statusCode': 200,
-        'body': 'Message processed successfully'
+  "Version": "2008-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "sns.amazonaws.com"
+      },
+      "Action": "sqs:SendMessage",
+      "Resource": "arn:aws:sqs:us-east-1:447640317537:s3-event-queue",
+      "Condition": {
+        "ArnEquals": {
+          "aws:SourceArn": "arn:aws:sns:us-east-1:447640317537:s3-event-topic"
+        }
+      }
     }
-Click Deploy. Upload another file to S3 → check Lambda logs to verify processing.
+  ]
+}
+Step 3: Save
+Click Save
+
+Part 5: Add SNS Access Policy
+Step 1: Edit Topic Policy
+Go to SNS → Topics → Click s3-event-topic
+
+Click Access policy tab → Edit
+
+Step 2: Add Policy
+Replace existing policy with:
+
+json
+{
+  "Version": "2008-10-17",
+  "Statement": [
+    {
+      "Sid": "AllowS3ToPublish",
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "s3.amazonaws.com"
+      },
+      "Action": "sns:Publish",
+      "Resource": "arn:aws:sns:us-east-1:447640317537:s3-event-topic",
+      "Condition": {
+        "StringEquals": {
+          "aws:SourceAccount": "447640317537"
+        },
+        "ArnLike": {
+          "aws:SourceArn": "arn:aws:s3:::malleshaishu"
+        }
+      }
+    }
+  ]
+}
+Step 3: Save
+Click Save changes
+
+Part 6: Create Lambda Function
+Step 1: Create Function
+Go to AWS Console → Search Lambda
+
+Click Create function
+
+Choose: Author from scratch
+
+Function name: Enter SQSProcessor
+
+Runtime: Select Python 3.9
+
+Architecture: x86_64
+
+Click Create function
+
+Step 2: Add Lambda Code
+Scroll down to Code source section
+
+Replace existing code with:
+
+python
+import json
+
+def lambda_handler(event, context):
+    print("Lambda function started")
+    print(f"Received event: {json.dumps(event)}")
+    
+    for record in event['Records']:
+        sns_message = json.loads(record['body'])
+        
+        if 'Message' in sns_message:
+            s3_event = json.loads(sns_message['Message'])
+            
+            for s3_record in s3_event.get('Records', []):
+                bucket = s3_record['s3']['bucket']['name']
+                key = s3_record['s3']['object']['key']
+                event_name = s3_record.get('eventName', 'Unknown')
+                
+                print(f"File uploaded: {key} to bucket: {bucket}")
+                print(f"Event type: {event_name}")
+    
+    print("Lambda function completed")
+    return {'statusCode': 200}
+Step 3: Deploy
+Click Deploy button
+
+Part 7: Add SQS Trigger to Lambda
+Step 1: Add Trigger
+Click Add trigger (or go to Configuration → Triggers → Add trigger)
+
+Select a source: Choose SQS
+
+SQS queue: Select s3-event-queue
+
+Batch size: Leave as 10
+
+Click Add
+
+Part 8: Attach IAM Permissions to Lambda
+Step 1: Locate Lambda Role
+Go to Configuration tab
+
+Click Permissions (left menu)
+
+Click the Role name (blue link)
+
+Step 2: Attach Policies
+Click Add permissions → Attach policies
+
+Search for: AWSLambdaBasicExecutionRole
+
+Check the box
+
+Search for: AWSLambdaSQSQueueExecutionRole
+
+Check the box
+
+Click Add permissions
+
+Step 3: Return to Lambda
+Close the IAM tab
+
+Go back to Lambda function
+
+Part 9: Configure S3 Event Notification
+Step 1: Go to S3 Bucket
+Go to S3 → Click malleshaishu bucket
+
+Click Properties tab
+
+Step 2: Create Event Notification
+Scroll to Event notifications → Click Create event notification
+
+Event name: Enter s3-to-sns
+
+Event types: Select All object create events
+
+Destination: Select SNS topic
+
+Specify SNS topic: Choose from your SNS topics
+
+SNS topic: Select s3-event-topic
+
+Click Create
+
+o S3 → check Lambda logs to verify processing.
