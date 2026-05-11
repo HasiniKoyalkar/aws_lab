@@ -7,6 +7,18 @@ Service Role: select LabRole, EC2 Instance Profile: LabInstanceProfile → Next.
 Select VPC, subnets, enable Public IP.
 Instance type: t2.micro, Min: 1, Max: 2 → Review → Create.
 Wait for deployment → open provided domain URL in browser → app is live.
+from flask import Flask
+import os
+
+application = Flask(__name__)
+
+@application.route('/')
+def hello():
+    return 'Hello from AWS Elastic Beanstalk!'
+
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 8080))
+    application.run(host='0.0.0.0', port=port)
 Activity 2 – Deploy PHP Hello World app
 Create file index.php:
 <?php
